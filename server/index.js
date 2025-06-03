@@ -4,15 +4,44 @@ dotenv.config();
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import cors from 'cors';
 import jwt from 'jsonwebtoken';
+
+// List of allowed origins for CORS
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://cbs-timer.cbs.site.univ-lorraine.fr:3000",
+  "https://cbs-timer.cbs.site.univ-lorraine.fr"
+];
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-app.use(cors());
+// Custom CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'null');
+  }
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Origin, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 app.use(express.json());
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin1";
 const ADMIN_PASS = process.env.ADMIN_PASS || "azerty";
@@ -36,10 +65,12 @@ function cleanTimer(timer) {
   };
 }
 
+// Root route
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -121,6 +152,12 @@ app.delete('/api/session/:sessionName', (req, res) => {
   }
   const { sessionName } = req.params;
   if (sessions[sessionName]) {
+    // Clean up timer interval if exists to avoid zombie timers
+    const timer = sessions[sessionName].timer;
+    if (timer && timer.interval) {
+      clearInterval(timer.interval);
+      timer.interval = null;
+    }
     delete sessions[sessionName];
     res.json({ message: "Session deleted" });
     io.to(sessionName).emit('sessionDeleted');

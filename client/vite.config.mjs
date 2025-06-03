@@ -10,7 +10,8 @@ export default defineConfig({
     https: false,         // Explicitly disable HTTPS
     allowedHosts: [
       'all',
-      'cbs-timer.cbs.site.univ-lorraine.fr'
+      'cbs-timer.cbs.site.univ-lorraine.fr',
+      'cbs-timer.cbs.site.univ-lorraine.fr:4000'
     ],                    // Allow all hosts and explicitly allow your backend's host
     proxy: {
       '/api': {

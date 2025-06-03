@@ -25,9 +25,9 @@ function SpectatorPanel({ onBack }) {
     try {
       return import.meta.env?.VITE_SERVER_URL || 
              (typeof window !== 'undefined' && window.REACT_APP_SERVER_URL) ||
-             'http://cbs-timer.cbs.site.univ-lorraine.fr';
+             'http://cbs-timer.cbs.site.univ-lorraine.fr:4000';
     } catch {
-      return 'http://cbs-timer.cbs.site.univ-lorraine.fr';
+      return 'http://cbs-timer.cbs.site.univ-lorraine.fr:4000';
     }
   };
 
